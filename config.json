@@ -3,22 +3,23 @@
   "sent_log_file": "enviados.xlsx",
   "checkpoint_file": "checkpoint.json",
   "profile_dir": "/tmp/whatsapp_profile",
-  "min_interval_seconds": 60,
-  "max_interval_seconds": 120,
+  "min_interval_seconds": 120,
+  "max_interval_seconds": 480,
   "typing_delay_min": 0.03,
   "typing_delay_max": 0.12,
   "pause_probability": 0.07,
   "correction_probability": 0.05,
   "send_windows": [
-    ["08:00", "12:00"],
-    ["13:30", "23:00"]
+    ["08:00", "19:00"]
   ],
-  "max_messages_per_hour": 10,
-  "max_messages_per_day": 90,
+  "max_messages_per_hour": 60,
+  "max_messages_per_day": 300,
   "retry_attempts": 3,
   "retry_backoff_seconds": 5,
   "randomize_order": true,
   "perform_periodic_actions": true,
   "periodic_action_probability": 0.4,
-  "webdriver_wait_seconds": 40
+  "webdriver_wait_seconds": 40,
+  "max_batch_size": 15,
+  "batch_pause_minutes": 30
 }
