@@ -11,7 +11,7 @@
   "correction_probability": 0.05,
   "send_windows": [
     ["08:00", "12:00"],
-    ["13:30", "22:00"]
+    ["13:30", "23:00"]
   ],
   "max_messages_per_hour": 10,
   "max_messages_per_day": 90,
