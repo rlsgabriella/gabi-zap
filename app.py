@@ -3,6 +3,7 @@ safe_whatsapp_sender.py
 Versão ajustada:
 - Intervalo entre mensagens: 2 a 8 minutos
 - Envio em blocos de 15 contatos com pausa de 30 minutos entre blocos
+- Normalização de números: (85) 98933-4632 → 5585989334632
 - Melhorias em caminhos, compatibilidade e clareza
 """
 
@@ -80,14 +81,19 @@ def setup_logging(logfile="sender.log"):
 
 
 def normalize_phone(raw: str) -> Optional[str]:
+    """Normaliza número para WhatsApp Web: remove caracteres e adiciona DDI."""
     if pd.isna(raw):
         return None
     s = "".join(ch for ch in str(raw) if ch.isdigit())
-    return s if len(s) >= 10 else None
+    # Adiciona DDI do Brasil (55) se ainda não tiver
+    if len(s) == 11:  # 2 dígitos DDD + 9 dígitos do celular
+        s = "55" + s
+    elif len(s) < 10:  # número inválido
+        return None
+    return s
 
 
 def within_send_windows(cfg: dict) -> bool:
-    """Checa se o horário atual está dentro de alguma janela configurada."""
     now = datetime.now().time()
     for start_s, end_s in cfg["send_windows"]:
         start = datetime.strptime(start_s, "%H:%M").time()
@@ -102,14 +108,12 @@ def within_send_windows(cfg: dict) -> bool:
 
 
 def human_sleep(min_s: float, max_s: float):
-    """Pausa humanizada entre mensagens."""
     total = random.uniform(min_s, max_s)
     logging.info(f"Aguardando {total/60:.1f} minutos antes do próximo envio...")
     time.sleep(total)
 
 
 def send_whatsapp_message(driver, phone_number: str, message: str, cfg: dict) -> bool:
-    """Envia uma mensagem via WhatsApp Web."""
     wait_seconds = cfg.get("webdriver_wait_seconds", 40)
     try:
         logging.info(f"Enviando para {phone_number}...")
@@ -144,7 +148,11 @@ def save_checkpoint(path: str, data: dict):
 def load_checkpoint(path: str) -> dict:
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                logging.warning("Checkpoint vazio ou corrompido, reiniciando...")
+                return {}
     return {}
 
 
@@ -160,10 +168,12 @@ class SafeSender:
 
     def load_contacts(self) -> pd.DataFrame:
         df = pd.read_excel(self.cfg["contacts_file"])
-        df = df.dropna(subset=['CONTATO'])
+        if 'CONTATO' not in df.columns:
+            raise KeyError("Coluna 'CONTATO' não encontrada no arquivo de contatos.")
         df['CONTATO'] = df['CONTATO'].apply(normalize_phone)
         df = df.dropna(subset=['CONTATO'])
 
+        # Remove contatos já enviados
         if os.path.exists(self.sent_log_file):
             df_sent = pd.read_excel(self.sent_log_file)
             sent_set = set(df_sent['CONTATO'].astype(str))

@@ -1,0 +1,6 @@
+# Planilhas com dados pessoais
+contatos.xlsx
+enviados.xlsx
+
+# Segurança extra: ignora qualquer arquivo .xlsx
+*.xlsx
